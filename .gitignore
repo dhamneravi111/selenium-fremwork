@@ -1,0 +1,19 @@
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# Build
+target/
+
+# Logs
+logs/
+*.log
+
+# Reports
+reports/
+ExtentReports/
+
+# OS
+.DS_Store
+Thumbs.db

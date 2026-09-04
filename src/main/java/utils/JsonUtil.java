@@ -1,0 +1,3 @@
+package utils;
+import com.fasterxml.jackson.core.type.TypeReference;import com.fasterxml.jackson.databind.ObjectMapper;import java.io.InputStream;import java.util.*;
+public final class JsonUtil { private JsonUtil(){} public static <T> List<T> readList(String resource, TypeReference<List<T>> type){ try(InputStream in=Thread.currentThread().getContextClassLoader().getResourceAsStream(resource)){ return new ObjectMapper().readValue(in,type); }catch(Exception e){ throw new RuntimeException(e);} } public static List<Map<String,String>> readMapList(String resource){ return readList(resource,new TypeReference<>(){}); } }

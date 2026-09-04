@@ -1,0 +1,18 @@
+package base;
+
+import config.ConfigReader;import constants.BrowserType;import io.github.bonigarcia.wdm.WebDriverManager;import org.openqa.selenium.*;import org.openqa.selenium.chrome.*;import org.openqa.selenium.edge.*;import org.openqa.selenium.firefox.*;import org.openqa.selenium.remote.RemoteWebDriver;import org.openqa.selenium.safari.SafariDriver;import java.net.URL;import java.nio.file.Files;import java.util.HashMap;import java.util.Map;
+
+/** Creates local, Grid, or BrowserStack WebDriver instances. Thread-safe via DriverManager. */
+public final class DriverFactory { private DriverFactory(){}
+  public static WebDriver createDriver(){ BrowserConfig cfg=BrowserConfig.fromConfig(); try{ Files.createDirectories(cfg.downloadDir()); }catch(Exception e){ throw new RuntimeException(e); }
+    Capabilities caps = capabilities(cfg); if(cfg.remote() || ConfigReader.getInstance().getBoolean("browserstack.enabled")){ try{return new RemoteWebDriver(new URL(remoteUrl()), caps);}catch(Exception e){throw new RuntimeException("Remote driver failed",e);} }
+    return switch(BrowserType.valueOf(cfg.browser().toUpperCase())){ case CHROME -> { WebDriverManager.chromedriver().setup(); yield new ChromeDriver((ChromeOptions)caps); } case FIREFOX -> { WebDriverManager.firefoxdriver().setup(); yield new FirefoxDriver((FirefoxOptions)caps); } case EDGE -> { WebDriverManager.edgedriver().setup(); yield new EdgeDriver((EdgeOptions)caps); } case SAFARI -> new SafariDriver(); };
+  }
+  private static String remoteUrl(){ ConfigReader c=ConfigReader.getInstance(); if(c.getBoolean("browserstack.enabled")){ return "https://"+c.get("browserstack.username")+":"+c.get("browserstack.accessKey")+"@hub-cloud.browserstack.com/wd/hub"; } return c.get("remote.url","http://localhost:4444/wd/hub"); }
+  public static Capabilities capabilities(BrowserConfig cfg){ return switch(BrowserType.valueOf(cfg.browser().toUpperCase())){ case CHROME -> chromeOptions(cfg); case FIREFOX -> firefoxOptions(cfg); case EDGE -> edgeOptions(cfg); case SAFARI -> new org.openqa.selenium.safari.SafariOptions(); }; }
+  private static ChromeOptions chromeOptions(BrowserConfig cfg){ ChromeOptions o=new ChromeOptions(); if(cfg.headless()) o.addArguments("--headless=new"); o.addArguments("--window-size="+cfg.windowSize(),"--disable-notifications","--remote-allow-origins=*"); Map<String,Object> prefs=new HashMap<>(); prefs.put("download.default_directory",cfg.downloadDir().toAbsolutePath().toString()); o.setExperimentalOption("prefs",prefs); browserStack(o); return o; }
+  private static FirefoxOptions firefoxOptions(BrowserConfig cfg){ FirefoxOptions o=new FirefoxOptions(); if(cfg.headless()) o.addArguments("-headless"); return o; }
+  private static EdgeOptions edgeOptions(BrowserConfig cfg){ EdgeOptions o=new EdgeOptions(); if(cfg.headless()) o.addArguments("--headless=new"); o.addArguments("--window-size="+cfg.windowSize(),"--disable-notifications"); return o; }
+  private static void browserStack(MutableCapabilities o){ ConfigReader c=ConfigReader.getInstance(); if(c.getBoolean("browserstack.enabled")){ MutableCapabilities bs=new MutableCapabilities(); bs.setCapability("os","Windows"); bs.setCapability("osVersion","11"); bs.setCapability("projectName","Selenium Framework"); bs.setCapability("buildName","CI Build"); bs.setCapability("sessionName","TestNG"); o.setCapability("bstack:options",bs);} }
+  public static ChromeOptions mobileChromeEmulation(){ ChromeOptions options=new ChromeOptions(); Map<String,String> mobile=new HashMap<>(); mobile.put("deviceName","Pixel 7"); options.setExperimentalOption("mobileEmulation",mobile); return options; }
+}

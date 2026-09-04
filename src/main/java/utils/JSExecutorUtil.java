@@ -1,0 +1,3 @@
+package utils;
+import base.DriverManager;import org.openqa.selenium.*;
+public final class JSExecutorUtil { private JSExecutorUtil(){} private static JavascriptExecutor js(){ return (JavascriptExecutor)DriverManager.getDriver(); } public static void scrollTo(WebElement e){ js().executeScript("arguments[0].scrollIntoView({block:'center'});",e);} public static void highlight(WebElement e){ js().executeScript("arguments[0].style.border='3px solid red'",e);} public static void click(WebElement e){ js().executeScript("arguments[0].click();",e);} public static Object getValue(String script){ return js().executeScript(script); } }

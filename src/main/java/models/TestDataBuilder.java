@@ -1,0 +1,2 @@
+package models;
+public final class TestDataBuilder { private String username="standard_user"; private String password="secret_sauce"; private String expectedHeading="Products"; public static TestDataBuilder loginUser(){ return new TestDataBuilder(); } public TestDataBuilder username(String v){ username=v; return this;} public TestDataBuilder password(String v){ password=v; return this;} public LoginUser build(){ return new LoginUser(username,password,expectedHeading);} }
