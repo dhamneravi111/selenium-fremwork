@@ -2,5 +2,5 @@
 <suite name="Default Suite" parallel="methods" thread-count="4">
   <listeners><listener class-name="listeners.TestListener"/></listeners>
   <parameter name="env" value="staging"/>
-  <test name="Smoke Tests"><groups><run><include name="smoke"/></run></groups><classes><class name="tests.LoginTest"/></classes></test>
+  <test name="All Tests"><classes><class name="tests.LoginTest"/></classes></test>
 </suite>

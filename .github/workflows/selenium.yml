@@ -1,5 +1,13 @@
 name: Selenium Tests
-on: [push, pull_request]
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -7,9 +15,27 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
         with: { distribution: temurin, java-version: '17', cache: maven }
-      - name: Run smoke tests
-        run: mvn clean test -Dbrowser=chrome -Denv=staging -Dgroups=smoke -Dheadless=true
+      - name: Run all Selenium tests
+        run: mvn clean test -Dbrowser=chrome -Denv=staging -Dheadless=true
       - name: Upload reports
         if: always()
         uses: actions/upload-artifact@v4
         with: { name: selenium-reports, path: 'reports/**' }
+      - name: Email test result
+        if: always()
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: ${{ secrets.SMTP_SERVER }}
+          server_port: ${{ secrets.SMTP_PORT }}
+          username: ${{ secrets.SMTP_USERNAME }}
+          password: ${{ secrets.SMTP_PASSWORD }}
+          subject: Selenium tests ${{ job.status }} for ${{ github.repository }}
+          to: ${{ secrets.NOTIFICATION_EMAIL }}
+          from: GitHub Actions <${{ secrets.SMTP_USERNAME }}>
+          body: |
+            Test result: ${{ job.status }}
+
+            Git repository: ${{ github.server_url }}/${{ github.repository }}
+            Branch: ${{ github.ref_name }}
+            Commit: ${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}
+            GitHub Actions run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
