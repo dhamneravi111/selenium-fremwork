@@ -1,2 +1,4 @@
 package models;
-public record LoginUser(String username,String password,String expectedHeading) {}
+
+public record LoginUser(String username, String password, String expectedHeading) {
+}

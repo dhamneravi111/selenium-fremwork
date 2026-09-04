@@ -1,2 +1,5 @@
 package constants;
-public enum BrowserType { CHROME, FIREFOX, EDGE, SAFARI }
+
+public enum BrowserType {
+	CHROME, FIREFOX, EDGE, SAFARI
+}
