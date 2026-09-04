@@ -25,8 +25,15 @@ jobs:
         id: email-summary
         if: always()
         shell: bash
+        env:
+          TEST_RESULT: ${{ job.status }}
+          REPOSITORY_URL: ${{ github.server_url }}/${{ github.repository }}
+          BRANCH_NAME: ${{ github.ref_name }}
+          COMMIT_URL: ${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
           python - <<'PY' > email-summary.txt
+          import os
           from pathlib import Path
           import xml.etree.ElementTree as ET
 
@@ -56,7 +63,7 @@ jobs:
 
           latest_extent = next(iter(sorted(Path("reports").glob("ExtentReport-*.html"), reverse=True)), None)
 
-          print(f"Test result: ${{{{ job.status }}}}")
+          print(f"Test result: {os.environ['TEST_RESULT']}")
           print(f"Total tests: {tests}")
           print(f"Passed: {tests - failures - errors - skipped}")
           print(f"Failed: {failures}")
@@ -69,10 +76,10 @@ jobs:
           print()
           print(f"Current Extent report: {latest_extent if latest_extent else 'Not generated'}")
           print()
-          print("Git repository: ${{ github.server_url }}/${{ github.repository }}")
-          print("Branch: ${{ github.ref_name }}")
-          print("Commit: ${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}")
-          print("GitHub Actions run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}")
+          print(f"Git repository: {os.environ['REPOSITORY_URL']}")
+          print(f"Branch: {os.environ['BRANCH_NAME']}")
+          print(f"Commit: {os.environ['COMMIT_URL']}")
+          print(f"GitHub Actions run: {os.environ['RUN_URL']}")
           PY
           {
             echo 'body<<EOF'
