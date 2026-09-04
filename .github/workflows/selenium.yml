@@ -21,6 +21,14 @@ jobs:
         run: rm -rf reports target/surefire-reports
       - name: Run all Selenium tests
         run: mvn clean test -Dbrowser=chrome -Denv=staging -Dheadless=true
+      - name: Prepare current Extent report
+        if: always()
+        shell: bash
+        run: |
+          latest_report="$(ls -t reports/ExtentReport-*.html 2>/dev/null | head -n 1 || true)"
+          if [ -n "$latest_report" ]; then
+            cp "$latest_report" reports/CurrentExtentReport.html
+          fi
       - name: Build email summary
         id: email-summary
         if: always()
@@ -61,7 +69,8 @@ jobs:
                       status = "SKIPPED"
                   lines.append(f"- {classname}.{name}: {status}")
 
-          latest_extent = next(iter(sorted(Path("reports").glob("ExtentReport-*.html"), reverse=True)), None)
+          current_extent = Path("reports/CurrentExtentReport.html")
+          latest_extent = current_extent if current_extent.exists() else None
 
           print(f"Test result: {os.environ['TEST_RESULT']}")
           print(f"Total tests: {tests}")
@@ -89,7 +98,11 @@ jobs:
       - name: Upload reports
         if: always()
         uses: actions/upload-artifact@v4
-        with: { name: selenium-reports, path: 'reports/**' }
+        with:
+          name: selenium-reports
+          path: |
+            reports/CurrentExtentReport.html
+            target/surefire-reports/**
       - name: Email test result
         if: always()
         uses: dawidd6/action-send-mail@v18
@@ -104,4 +117,4 @@ jobs:
           from: GitHub Actions <${{ secrets.SMTP_USERNAME }}>
           body: ${{ steps.email-summary.outputs.body }}
           html_body: false
-          attachments: reports/*.html
+          attachments: reports/CurrentExtentReport.html
