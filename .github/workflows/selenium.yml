@@ -30,7 +30,12 @@ jobs:
           latest_report="$(ls -t reports/ExtentReport-*.html 2>/dev/null | head -n 1 || true)"
           if [ -n "$latest_report" ]; then
             cp "$latest_report" reports/CurrentExtentReport.html
-            zip -j reports/CurrentExtentReport.zip reports/CurrentExtentReport.html
+            google-chrome \
+              --headless \
+              --disable-gpu \
+              --no-sandbox \
+              --print-to-pdf="$PWD/reports/CurrentExtentReport.pdf" \
+              "file://$PWD/reports/CurrentExtentReport.html"
           fi
       - name: Build email summary
         id: email-summary
@@ -105,7 +110,7 @@ jobs:
           name: selenium-reports
           path: |
             reports/CurrentExtentReport.html
-            reports/CurrentExtentReport.zip
+            reports/CurrentExtentReport.pdf
             target/surefire-reports/**
       - name: Email test result
         if: always()
@@ -120,4 +125,4 @@ jobs:
           to: ${{ secrets.NOTIFICATION_EMAIL || 'dhamneravi111@gmail.com' }}
           from: GitHub Actions <${{ secrets.SMTP_USERNAME }}>
           body: file://email-summary.txt
-          attachments: reports/CurrentExtentReport.zip
+          attachments: reports/CurrentExtentReport.pdf
