@@ -17,8 +17,68 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
         with: { distribution: temurin, java-version: '17', cache: maven }
+      - name: Clean previous reports
+        run: rm -rf reports target/surefire-reports
       - name: Run all Selenium tests
         run: mvn clean test -Dbrowser=chrome -Denv=staging -Dheadless=true
+      - name: Build email summary
+        id: email-summary
+        if: always()
+        shell: bash
+        run: |
+          python - <<'PY' > email-summary.txt
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+
+          reports = sorted(Path("target/surefire-reports").glob("TEST-*.xml"))
+          tests = failures = errors = skipped = 0
+          time_seconds = 0.0
+          lines = []
+
+          for report in reports:
+              root = ET.parse(report).getroot()
+              tests += int(root.attrib.get("tests", 0))
+              failures += int(root.attrib.get("failures", 0))
+              errors += int(root.attrib.get("errors", 0))
+              skipped += int(root.attrib.get("skipped", 0))
+              time_seconds += float(root.attrib.get("time", 0))
+              for case in root.findall("testcase"):
+                  name = case.attrib.get("name", "unknown")
+                  classname = case.attrib.get("classname", "")
+                  status = "PASSED"
+                  if case.find("failure") is not None:
+                      status = "FAILED"
+                  elif case.find("error") is not None:
+                      status = "ERROR"
+                  elif case.find("skipped") is not None:
+                      status = "SKIPPED"
+                  lines.append(f"- {classname}.{name}: {status}")
+
+          latest_extent = next(iter(sorted(Path("reports").glob("ExtentReport-*.html"), reverse=True)), None)
+
+          print(f"Test result: ${{{{ job.status }}}}")
+          print(f"Total tests: {tests}")
+          print(f"Passed: {tests - failures - errors - skipped}")
+          print(f"Failed: {failures}")
+          print(f"Errors: {errors}")
+          print(f"Skipped: {skipped}")
+          print(f"Duration: {time_seconds:.3f} seconds")
+          print()
+          print("Test cases:")
+          print("\n".join(lines) if lines else "- No test case XML found")
+          print()
+          print(f"Current Extent report: {latest_extent if latest_extent else 'Not generated'}")
+          print()
+          print("Git repository: ${{ github.server_url }}/${{ github.repository }}")
+          print("Branch: ${{ github.ref_name }}")
+          print("Commit: ${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}")
+          print("GitHub Actions run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}")
+          PY
+          {
+            echo 'body<<EOF'
+            cat email-summary.txt
+            echo 'EOF'
+          } >> "$GITHUB_OUTPUT"
       - name: Upload reports
         if: always()
         uses: actions/upload-artifact@v4
@@ -35,10 +95,6 @@ jobs:
           subject: Selenium tests ${{ job.status }} for ${{ github.repository }}
           to: ${{ secrets.NOTIFICATION_EMAIL || 'dhamneravi111@gmail.com' }}
           from: GitHub Actions <${{ secrets.SMTP_USERNAME }}>
-          body: |
-            Test result: ${{ job.status }}
-
-            Git repository: ${{ github.server_url }}/${{ github.repository }}
-            Branch: ${{ github.ref_name }}
-            Commit: ${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}
-            GitHub Actions run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          body: ${{ steps.email-summary.outputs.body }}
+          html_body: false
+          attachments: reports/*.html
