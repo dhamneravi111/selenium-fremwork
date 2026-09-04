@@ -27,9 +27,9 @@ jobs:
         if: always()
         uses: dawidd6/action-send-mail@v18
         with:
-          server_address: ${{ secrets.SMTP_SERVER }}
-          server_port: ${{ secrets.SMTP_PORT }}
-          username: ${{ secrets.SMTP_USERNAME }}
+          server_address: smtp.gmail.com
+          server_port: 587
+          username: qa1shopkirana@gmail.com
           password: ${{ secrets.SMTP_PASSWORD }}
           subject: Selenium tests ${{ job.status }} for ${{ github.repository }}
           to: ${{ secrets.NOTIFICATION_EMAIL || 'dhamneravi111@gmail.com' }}
