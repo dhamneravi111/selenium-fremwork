@@ -31,7 +31,7 @@ jobs:
           password: ${{ secrets.SMTP_PASSWORD }}
           subject: Selenium tests ${{ job.status }} for ${{ github.repository }}
           to: ${{ secrets.NOTIFICATION_EMAIL || 'dhamneravi111@gmail.com' }}
-          from: GitHub Actions <dhamneravi111@gmail.com>
+          from: GitHub Actions <qa1shpokirana@gmail.com>
           body: |
             Test result: ${{ job.status }}
 
