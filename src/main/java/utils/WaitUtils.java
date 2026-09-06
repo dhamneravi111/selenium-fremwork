@@ -21,6 +21,10 @@ public final class WaitUtils {
 		return wait(timeoutSeconds).until(ExpectedConditions.visibilityOfElementLocated(locator));
 	}
 
+	public static java.util.List<WebElement> waitForAllVisible(By locator, int timeoutSeconds) {
+		return wait(timeoutSeconds).until(ExpectedConditions.visibilityOfAllElementsLocatedBy(locator));
+	}
+
 	public static WebElement waitForClickable(WebElement element) {
 		return wait(ConfigReader.getInstance().getInt("timeout.seconds", 15))
 				.until(ExpectedConditions.elementToBeClickable(element));
@@ -34,6 +38,14 @@ public final class WaitUtils {
 	public static Boolean waitForUrlContains(String partialUrl) {
 		return wait(ConfigReader.getInstance().getInt("timeout.seconds", 15))
 				.until(ExpectedConditions.urlContains(partialUrl));
+	}
+
+	public static boolean waitForUrlChangesFrom(String url, int timeoutSeconds) {
+		try {
+			return wait(timeoutSeconds).until(ExpectedConditions.not(ExpectedConditions.urlToBe(url)));
+		} catch (TimeoutException e) {
+			return false;
+		}
 	}
 
 	public static Boolean waitForAjax() {
